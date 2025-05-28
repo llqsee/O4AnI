@@ -58,7 +58,7 @@ analysis = Scatter_Metric(data, )
 # Generating a quality metric class
 analysis.plot_scatter_cal_matrix(
                         margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
-                        marker = 'square', 
+                        marker = 'plus_symbol', 
                         marker_size = 25, 
                         cmap='tab10',
                         dpi = 100, 
@@ -76,9 +76,9 @@ score = analysis.importance_metric(important_cal_method = 'mahalanobis_distance'
 ### Results
 The results of the scatter plot and heatmap visualizations are saved as the following images:
 
-![Scatter Plot](output_MNIST_scatterplot.png)
+![Scatter Plot](test_MNIST/scatterplot_mnist_pred_updated_str.png)
 Figure 1: Scatterplot generated from the data and specific parameters.
-![Heatmap](output_MNIST_heatmap.png)
+![Heatmap](test_MNIST/heat_map_mnist_pred_updated_str.png)
 Figure 2: Heatmap illustrating which region hide more important information (important data points).
 
 The calculated quality metric for this example is 0.24, which quantifies the level of overplotting in the scatterplot.
