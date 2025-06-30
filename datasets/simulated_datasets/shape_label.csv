@@ -1,4 +1,4 @@
-Dataset Name,Shape
+DatasetName,Shape
 clusternumber2_datanumber500_testnumbercategorysmall_repeatnumber0,['linear' 'three_order']
 clusternumber2_datanumber100_testnumbercategorylarge_repeatnumber0,['cluster']
 clusternumber2_datanumber100_testnumbercategorylarge_repeatnumber1,['cluster' 'lip_cluster']

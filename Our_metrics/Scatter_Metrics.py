@@ -14,6 +14,8 @@ from utils.sort_pandas import sort_dataframe
 from scipy.stats import gaussian_kde
 from sklearn.neighbors import NearestNeighbors
 import time
+from matplotlib.colors import ListedColormap
+import matplotlib.patches as mpatches
 
 
 class Scatter_Metric:
@@ -93,6 +95,7 @@ class Scatter_Metric:
         # Add an attribute to the data named ID and set it as the index, and covered pixels
         self.data['ID'] = range(len(self.data))
         self.data['covered_pixels'] = [[] for _ in range(len(self.data))]
+        self.data['covered_pixels_real'] = [[] for _ in range(len(self.data))]
         # ======================================================================================================
         
     def _cal_importance_index(self, 
@@ -202,14 +205,14 @@ class Scatter_Metric:
             # ======================================================================================================
             
         
-        # Hide the legend, title, border, and ticks
-        self.ax.legend().set_visible(False)
-        self.ax.set_title("")
-        self.ax.spines['top'].set_visible(False)
-        self.ax.spines['right'].set_visible(False)
-        self.ax.spines['left'].set_visible(False)
-        self.ax.spines['bottom'].set_visible(False)
-        self.ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+        # # Hide the legend, title, border, and ticks
+        # self.ax.legend().set_visible(False)
+        # self.ax.set_title("")
+        # self.ax.spines['top'].set_visible(False)
+        # self.ax.spines['right'].set_visible(False)
+        # self.ax.spines['left'].set_visible(False)
+        # self.ax.spines['bottom'].set_visible(False)
+        # self.ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
         
         x_margin = (self.data[self.xvariable].max() - self.data[self.xvariable].min()) * 0.05
         y_margin = (self.data[self.yvariable].max() - self.data[self.yvariable].min()) * 0.05
@@ -505,6 +508,58 @@ class Scatter_Metric:
             print(f"Density heatmap saved as {filename}")
         else:   
             plt.show()
+
+
+    def distance_consistency(self):
+        start_time = time.time()
+        """
+        Calculates the Distance Consistency (DSC) metric:
+        DSC = (# of points for which the distance to their own-class centroid
+               is NOT strictly less than to any other centroid) / (total # points)
+
+        Returns:
+            float: DSC in [0,1], the fraction of misclassified points under the
+                   centroid-distance rule.
+        """
+        # Ensure we have a categorical variable
+        if self.zvariable is None:
+            raise ValueError("zvariable must be set to compute Distance Consistency.")
+
+        # Extract coordinate arrays
+        x_vals = self.data[self.xvariable].to_numpy()
+        y_vals = self.data[self.yvariable].to_numpy()
+        labels = self.data[self.zvariable].to_numpy()
+        n = len(self.data)
+
+        # Compute centroids in the 2D projection
+        centroids = {}
+        for cat in np.unique(labels):
+            mask = labels == cat
+            centroids[cat] = (
+                x_vals[mask].mean(),
+                y_vals[mask].mean()
+            )
+
+        # Count violations of the centroid-distance property
+        errors = 0
+        for (x, y, lbl) in zip(x_vals, y_vals, labels):
+            d_own = np.hypot(x - centroids[lbl][0], y - centroids[lbl][1])
+            # If any other centroid is closer or equal, it's a violation
+            for other_lbl, (cx, cy) in centroids.items():
+                if other_lbl == lbl:
+                    continue
+                if np.hypot(x - cx, y - cy) <= d_own:
+                    errors += 1
+                    break
+
+        # DSC is the fraction of misclassified points
+        dsc = errors / n
+        self.result = dsc
+        end_time  = time.time()
+        self.calculation_time = end_time - start_time
+        print(f'The Distance Consistency (DSC) metric is: {dsc:.2f}')
+        return dsc
+
 
 
     def visilibity_index(self):
@@ -889,29 +944,183 @@ class Scatter_Metric:
             print(f"Time taken for pairwise_bounding_box_based_overlap_degree: {self.calculation_time:.2f} seconds")
 
 
+    def plot_top_layer(self,
+                       ax=None,
+                       cmap_name='tab20',
+                       show_legend=True,
+                       origin='upper',
+                       **imshow_kwargs):
+        """
+        Plot each pixel by the category of its topmost covering object.
+
+        This scans self.pixel_color_matrix[y, x], which is a list of dicts:
+            {'category': str, 'importance_value': float, 'ID': …}
+        It picks the dict with max importance_value at each pixel, extracts its
+        'category', and then displays a categorical colormap of those labels,
+        skipping any pixels whose top category is None.
+
+        Parameters
+        ----------
+        ax : matplotlib Axes, optional
+            If given, draw into this axes; otherwise a new figure+axes is created.
+        cmap_name : str, default 'tab20'
+            A qualitative Matplotlib colormap name (e.g. 'tab10', 'Set3', …).
+        show_legend : bool, default True
+            Whether to draw a legend mapping colors to category names.
+        origin : {'upper','lower'}, default 'upper'
+            Passed to imshow (most image‐style plots use origin='upper').
+        **imshow_kwargs :
+            Extra kwargs for ax.imshow (e.g. interpolation='nearest', vmin/vmax).
+
+        Returns
+        -------
+        (fig, ax) if a new figure was created, else ax
+        """
+
+        # 1) Build the H×W array of the topmost category label (or None)
+        data_lists = self.pixel_color_matrix
+        H, W = data_lists.shape
+        top_cats = np.empty((H, W), dtype=object)
+
+        for y in range(H):
+            for x in range(W):
+                stack = data_lists[y, x]
+                if stack:
+                    top = stack[-1]
+                    top_cats[y, x] = top.get('category', None)
+                else:
+                    top_cats[y, x] = None
+
+        # 2) Gather the unique categories (skip None) without sorting conflicts
+        cats = list({c for row in top_cats for c in row if c is not None})
+        n_cats = len(cats)
+        if n_cats == 0:
+            raise RuntimeError("No categories found in pixel_color_matrix.")
+
+        # 3) Create a ListedColormap with one color per category
+        cmap = plt.get_cmap(cmap_name, n_cats)
+
+        # 4) Map each category to an integer index, leave other pixels as -1
+        cat2idx = {cat: idx for idx, cat in enumerate(cats)}
+        idx_mat = np.full((H, W), -1, dtype=int)
+        for cat, idx in cat2idx.items():
+            idx_mat[top_cats == cat] = idx
+
+        # Mask out the no‐category pixels so they aren’t drawn
+        idx_masked = np.ma.masked_where(idx_mat == -1, idx_mat)
+
+        # 5) Plot with imshow
+        created_fig = False
+        if ax is None:
+            fig, ax = plt.subplots()
+            created_fig = True
+
+        im = ax.imshow(
+            idx_masked,
+            cmap=cmap,
+            origin=origin,
+            interpolation='nearest',
+            **imshow_kwargs
+        )
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title("Topmost‐layer Categories")
+
+        # 6) Optional legend
+        if show_legend:
+            handles = [
+                mpatches.Patch(color=im.cmap(im.norm(idx)), label=str(cat))
+                for cat, idx in cat2idx.items()
+            ]
+            ax.legend(
+                handles=handles,
+                bbox_to_anchor=(1.02, 1),
+                loc='upper left',
+                borderaxespad=0.
+            )
+
+        # 7) Reverse the y-axis
+        ax.invert_yaxis()
+
+        # 7) Display immediately
+        plt.show()
+
+        return (fig, ax) if created_fig else ax
+
+
+
+    # def cal_covered_data_points(self):
+    #     '''
+    #     Calculate how many data points are totally covered by the different categoried data points in the scatterplot
+
+    #     args:
+    #     self.pixel_color_matrix: the pixel matrix for the scatterplot
+    #     self.data: the data for the scatterplot (attribute covered_pixels for each data point)
+
+    #     Returns:
+    #         number_of_covered_data_points: Number of data points totally covered by any other data points.
+    #         number_of_covered_data_points_different_class: Number of data points totally covered by data points of different class.
+    #     '''
+    #     # ======================================================================================================
+    #     # calculate the covered_pixels for each data point
+    #     number_of_covered_data_points_different_class = 0
+    #     number_of_covered_data_points = 0
+    #     for i in self.data.index:
+    #         idx = self.data['ID'][i]
+    #         category = self.data.at[i, self.zvariable]
+    #         is_completely_covered = True
+    #         is_completely_covered_by_different_category = True
+    #         covered_pixels = []
+    #         for row in range(self.pixel_color_matrix.shape[0]):
+    #             for col in range(self.pixel_color_matrix.shape[1]):
+    #                 pixel_stack = self.pixel_color_matrix[row, col]
+    #                 if pixel_stack:
+    #                     for d in pixel_stack:
+    #                         if d['ID'] == idx and d is pixel_stack[-1]:
+    #                             # If idx is the last element in the pixel stack, it is not covered
+    #                             is_completely_covered = False
+    #                             is_completely_covered_by_different_category = False
+    #                         elif d['ID'] == idx and d is not pixel_stack[-1]:
+    #                             # If idx is not the last element in the pixel stack, it is covered
+    #                             if pixel_stack[-1]['category'] == category:
+    #                                 is_completely_covered_by_different_category = False
+                                    
+    #         if is_completely_covered:
+    #             number_of_covered_data_points += 1
+    #         if is_completely_covered_by_different_category:
+    #             number_of_covered_data_points_different_class += 1
+
+    #     print(f'The number of data points that are totally covered by the other class data points is: {number_of_covered_data_points_different_class}')
+    #     print(f'The number of data points that are totally covered by data points is: {number_of_covered_data_points}')
+        
+    #     return number_of_covered_data_points, number_of_covered_data_points_different_class
+        
+    #     # ======================================================================================================
+
+
+
     def cal_covered_data_points(self):
-        '''
-        Calculate how many data points are totally covered by the different categoried data points in the scatterplot
-        
-        args:
-        self.pixel_color_matrix: the pixel matrix for the scatterplot
-        self.data: the data for the scatterplot (attribute covered_pixels for each data point)
-        
-        '''
-        # ======================================================================================================
-        # calculate the covered_pixels for each data point
-        start_time = time.time()
+        """
+        Calculates:
+        - Number of data points totally covered by other-class data points.
+        - Number of covered pixels for anomaly data points (where cluster_label != class).
+
+        Returns:
+            number_of_covered_data_points_different_class (int): Number of data points fully occluded by other classes.
+            number_of_covered_pixels (int): Number of pixels for anomaly points covered by a different category.
+        """
+        # Ensure pixel_color_matrix is initialized
+        if self.pixel_color_matrix is None:
+            raise ValueError("pixel_color_matrix is not initialized. Run importance_metric or relevant method first.")
+
+        # Recompute covered_pixels for each data point
         for i in self.data.index:
-            # print(f'Calculating the covered pixels for data point {i}')
-            # if i == 236:
-            #     pass
             x = self.data[self.xvariable][i]
             y = self.data[self.yvariable][i]
             idx = self.data['ID'][i]
-            
             x_pix, y_pix = self.ax.transData.transform((x, y))
-            x_pix, y_pix = int(x_pix - self.figsize[0] * self.dpi * self.margins['left']), int(y_pix - self.figsize[1] * self.dpi * self.margins['bottom'])
-            
+            x_pix = int(x_pix - self.figsize[0] * self.dpi * self.margins['left'])
+            y_pix = int(y_pix - self.figsize[1] * self.dpi * self.margins['bottom'])
             if self.marker == 'square':
                 area_square(self, x_pix, y_pix, idx, self.marker_size, self.pixel_width, self.pixel_height)
             elif self.marker == 'circle':
@@ -920,75 +1129,67 @@ class Scatter_Metric:
                 area_triangle(self, x_pix, y_pix, idx, self.marker_size, self.pixel_width, self.pixel_height)
             elif self.marker == 'plus':
                 area_plus(self, x_pix, y_pix, idx, self.marker_size, self.pixel_width, self.pixel_height)
-        # ======================================================================================================
-        
-        # ======================================================================================================
-        #  check occlusion after rendering all markers
-        number_of_covered_data_points_different_class = 0
-        number_of_covered_data_points = 0
+
+        num_covered_by_diff_class = 0
+        num_covered_pixels_anomaly = 0
         covered_categories = []
+
         for idx, datum in self.data.iterrows():
-            visible_count_different_class = 0
-            visible_count = 0
-            
-            for i in datum['covered_pixels']:
-                if len(self.pixel_color_matrix[i[1], i[0]]) > 1:
-                    
-                    # Check if a data point in the pixel is on the topmost layer
-                    # if idx not in [d['ID'] for d in self.pixel_color_matrix[i[1], i[0]][-1:]]:
-                    #     visible_count += 1
-                    if idx == self.pixel_color_matrix[i[1], i[0]][-1]['ID']:
-                        visible_count += 1
-
-                    # Check if a data point in the pixel is on the topmost layer
-                    if self.pixel_color_matrix[i[1], i[0]][-1]['category'] == datum[self.zvariable]:
-                        visible_count_different_class += 1
-                        
-                else:
-                    visible_count += 1
-                    visible_count_different_class += 1
-
-            if visible_count_different_class == 0:
+            # Check if all covered_pixels are occluded by a different class on top
+            is_fully_covered_by_diff_class = True
+            for pix in datum['covered_pixels']:
+                stack = self.pixel_color_matrix[pix[1], pix[0]]
+                if not stack or stack[-1]['category'] == datum[self.zvariable]:
+                    is_fully_covered_by_diff_class = False
+                    break
+            if is_fully_covered_by_diff_class and len(datum['covered_pixels']) > 0:
                 covered_categories.append(datum[self.zvariable])
-                number_of_covered_data_points_different_class += 1
+                num_covered_by_diff_class += 1
 
-            # if occluded_count_different_class <= 20:
-            #     covered_categories.append(datum[self.zvariable])
-            #     number_of_covered_data_points_different_class += 1
-                
-            if visible_count == 0:
-                number_of_covered_data_points += 1
-            
-            # if occluded_count <= 20:
-            #     number_of_covered_data_points += 1
-                
-                # print(f'The data point {datum["ID"]} is totally covered by the other data points')
-                
-            # Check for timeout after each row
-            if time.time() - start_time > 15:
-                self.calculation_time = 15
-                # print("Time taken for pairwise_bounding_box_based_overlap_degree more than 15 seconds (during initialization)")
-                self.result = '-'
-                return
-            
-        # Calculate the number of occurrences for each category in covered_categories
-        category_counts = {}
-        for category in covered_categories:
-            if category in category_counts:
-                category_counts[category] += 1
-            else:
-                category_counts[category] = 1
+            # For anomaly points, count pixels where topmost is a different category
+            if 'cluster_label' in datum and 'class' in datum and datum['cluster_label'] != datum['class']:
+                for pix in datum['covered_pixels_real']:
+                    stack = self.pixel_color_matrix[pix[1], pix[0]]
+                    if stack and stack[-1]['category'] != datum[self.zvariable]:
+                        num_covered_pixels_anomaly += 1
 
-        # Convert the category_counts dictionary to the desired array format
-        covered_categories_array = [{'category': category, 'number': count} for category, count in category_counts.items()]
+        # Print summary
+        print(f'The number of data points totally covered by other class data points: {num_covered_by_diff_class}')
+        print(f'The number of covered pixels for anomaly data points: {num_covered_pixels_anomaly}')
+
+        return num_covered_by_diff_class, num_covered_pixels_anomaly
+    
+    
+    
+    
         
-        print(f'The covered categories array is: {covered_categories_array}')
-        print(f'The number of data points that are totally covered by the other class data points is: {number_of_covered_data_points_different_class}')
-        print(f'The number of data points that are totally covered by data points is: {number_of_covered_data_points}')
+    def calculate_pixels_covered_by_different_categories(self):
+        """
         
-        return number_of_covered_data_points, number_of_covered_data_points_different_class, covered_categories_array
-        # ======================================================================================================
+        Calculates the number of data points in each pixel covered by topmost data point with different categories.
+        This method iterates through the pixel_color_matrix and counts how many data points are covered by a topmost data point having different 
+        category if the importance value of the topmost data point is less than the importance value of the other data points in the pixel stack.
 
+        Returns:
+            count (int): Number of such pixels.
+            pixel_indices (list): List of (row, col) indices for these pixels.
+        """
+        if self.pixel_color_matrix is None:
+            raise ValueError("pixel_color_matrix is not initialized. Run importance_metric or relevant method first.")
+
+        count = 0
+        for i in range(self.pixel_color_matrix.shape[0]):
+            for j in range(self.pixel_color_matrix.shape[1]):
+                pixel_stack = self.pixel_color_matrix[i, j]
+                if pixel_stack and len(pixel_stack) > 1:
+                    for k in range(len(pixel_stack) - 1):
+                        # Check if the topmost data point is different from the others
+                        if pixel_stack[k]['category'] != pixel_stack[-1]['category'] and pixel_stack[k]['importance_value'] > pixel_stack[-1]['importance_value']:
+                            count += 1
+        print(f"Number of pixels covered by different category: {count}")
+        return count
+    
+    
     
     def kernel_density_estimation(self, bandwidth=0.1, gridsize=100):
         start_time = time.time()

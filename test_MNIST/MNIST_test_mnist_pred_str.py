@@ -34,7 +34,7 @@ analysis = Scatter_Metric(data)
 analysis = Scatter_Metric(data, 
                           margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
                         marker = 'plus', 
-                        marker_size = 100, 
+                        marker_size = 10, 
                         dpi = 100, 
                         figsize= (12, 8),
                         xvariable = 'X coordinate',
@@ -74,6 +74,7 @@ analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight
 
 analysis.result
 
+
 max_value = np.nanmax(np.nan_to_num(analysis.other_layer_matrix, nan=np.nan))
 min_value = np.nanmin(np.nan_to_num(analysis.other_layer_matrix, nan=np.nan))
 
@@ -94,3 +95,6 @@ analysis.save_importance_bar(filename = 'test_MNIST/importance_bar_distribution_
 
 
 analysis.plot_density_heatmap(filename = 'test_MNIST/density_heatmap_mnist_pred_updated_str.png')
+
+
+analysis.distance_consistency()

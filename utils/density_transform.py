@@ -102,31 +102,35 @@ def update_pixel_matrix_for_plus(data, x_pix, y_pix, id, marker_size_pixels, pix
 
 
 def update_pixel_matrix_for_triangle(data, x_pix, y_pix, id, marker_size_pixels, pixel_width, pixel_height, color, use_colors, important_value, unique_categories = None):
-    triangle_height = marker_size_pixels * (np.sqrt(3) / 2)
-    vertex1 = (x_pix, y_pix + triangle_height / 2)
-    vertex2 = (x_pix - marker_size_pixels / 2, y_pix - triangle_height / 2)
-    vertex3 = (x_pix + marker_size_pixels / 2, y_pix - triangle_height / 2)
+    # Calculate the side length of the triangle marker (matplotlib's '^' marker is an upward-pointing equilateral triangle)
+    side_length = int(np.sqrt(marker_size_pixels) * (100 / 72))
+    triangle_height = side_length * (np.sqrt(3) / 2)
 
-    y_start = int(max(y_pix - triangle_height // 2, 0))
-    y_end = int(min(y_pix + triangle_height // 2, pixel_height))
-    x_start = int(max(x_pix - marker_size_pixels // 2, 0))
-    x_end = int(min(x_pix + marker_size_pixels // 2, pixel_width))
+    # Vertices for an upward-pointing triangle centered at (x_pix, y_pix)
+    vertex1 = (x_pix, y_pix - triangle_height / 2)  # Top vertex
+    vertex2 = (x_pix - side_length / 2, y_pix + triangle_height / 2)  # Bottom left
+    vertex3 = (x_pix + side_length / 2, y_pix + triangle_height / 2)  # Bottom right
+
+    # Bounding box for the triangle
+    x_start = int(max(x_pix - side_length / 2, 0))
+    x_end = int(min(x_pix + side_length / 2, pixel_width))
+    y_start = int(max(y_pix - triangle_height / 2, 0))
+    y_end = int(min(y_pix + triangle_height / 2, pixel_height))
 
     for px in range(x_start, x_end):
         for py in range(y_start, y_end):
             if 0 <= py < pixel_height and 0 <= px < pixel_width:
                 if is_point_in_triangle((px, py), vertex1, vertex2, vertex3):
                     if use_colors == 'yes':
-                        # Update color matrix
-                        # if color not in self.pixel_color_matrix[py, px]:
-                        #     self.pixel_color_matrix[py, px].add(color)
-                        #     pixel_matrix[py, px] += 1
                         if important_value is None:
-                            data.pixel_color_matrix[py, px][unique_categories.index(color)].append(1)
+                            data.pixel_color_matrix[py, px].append(1)
                         else:
                             data.pixel_color_matrix[py, px].append({'category': color, 'importance_value': important_value, 'ID': id})
-                    elif use_colors == 'no' or 'continous':
-                        data.pixel_noncolor_matrix[py, px] += 1
+                    elif use_colors in ['no', 'continuous']:
+                        if important_value is None:
+                            data.pixel_noncolor_matrix[py, px].append(1)
+                        else:
+                            data.pixel_noncolor_matrix[py, px].append(important_value)
 
 
 
@@ -135,15 +139,21 @@ def update_pixel_matrix_for_triangle(data, x_pix, y_pix, id, marker_size_pixels,
 
 def update_pixel_matrix_for_circle(data, x_pix, y_pix, id, marker_size_pixels, pixel_width, pixel_height, color, use_colors, important_value, unique_categories = None):
     radius = int(math.sqrt(marker_size_pixels / pi) * (100 / 72))  # 72 points per inch
-    for px in range(x_pix - radius, x_pix + radius):
-        for py in range(y_pix - radius, y_pix + radius):
+
+    x_start = int(max(x_pix - radius, 0))
+    x_end = int(min(x_pix + radius, pixel_width))
+    y_start = int(max(y_pix - radius, 0))
+    y_end = int(min(y_pix + radius, pixel_height))
+
+    for px in range(x_start, x_end):
+        for py in range(y_start, y_end):
             if 0 <= py < pixel_height and 0 <= px < pixel_width:
-                if (px - x_pix)**2 + (py - y_pix)**2 <= radius**2:
+                if (px - x_pix) ** 2 + (py - y_pix) ** 2 <= radius ** 2:
                     if use_colors == 'yes':
                         if important_value is None:
                             data.pixel_color_matrix[py, px].append(1)
                         else:
-                            data.pixel_color_matrix[py, px].append({'category': color, 'importance_value': important_value})
+                            data.pixel_color_matrix[py, px].append({'category': color, 'importance_value': important_value, 'ID': id})
                     elif use_colors in ['no', 'continuous']:
                         if important_value is None:
                             data.pixel_noncolor_matrix[py, px].append(1)
@@ -245,7 +255,7 @@ def update_pixel_matrix_for_circle_noncolor(data, x_pix, y_pix, id, marker_size_
 # =============================================================================
 # density transform for pairewise-based method
 
-def area_triangle(data, x_pix, y_pix, id, marker_size_pixels, pixel_width, pixel_height, color, use_colors, important_value, unique_categories = None):
+def area_triangle(data, x_pix, y_pix, id, marker_size_pixels, pixel_width, pixel_height):
     triangle_height = marker_size_pixels * (np.sqrt(3) / 2)
     vertex1 = (x_pix, y_pix + triangle_height / 2)
     vertex2 = (x_pix - marker_size_pixels / 2, y_pix - triangle_height / 2)
@@ -304,18 +314,29 @@ def area_circle(data, x_pix, y_pix, id, marker_size_pixels, pixel_width, pixel_h
     
 def area_square(data, x_pix, y_pix, id, marker_size_pixels, pixel_width, pixel_height):
     
-    # calculate the start and end points of the square
+    # calculate the start and end points of the square that we enlarge the square by 1 pixel to avoid covered by onther one different category data point
     marker_size_pixels = int(np.sqrt(marker_size_pixels) * (100 / 72))  # 72 points per inch
-    x_start = int(max(x_pix - marker_size_pixels / 2, 0))
-    x_end = int(min(x_pix + marker_size_pixels / 2, pixel_width))
-    y_start = int(max(y_pix - marker_size_pixels / 2, 0))
-    y_end = int(min(y_pix + marker_size_pixels / 2, pixel_height))
+    x_start = int(max(x_pix - marker_size_pixels / 2 - 1, 0))
+    x_end = int(min(x_pix + marker_size_pixels / 2 + 1, pixel_width))
+    y_start = int(max(y_pix - marker_size_pixels / 2 - 1, 0))
+    y_end = int(min(y_pix + marker_size_pixels / 2 + 1, pixel_height))
     
     # Define the area with an array of coordinates
     area = [[px, py] for px in range(x_start, x_end) for py in range(y_start, y_end)]
     
     data.data.loc[data.data['ID'] == id, 'covered_pixels'] = data.data.loc[data.data['ID'] == id, 'covered_pixels'].apply(lambda x: area)
-
+    
+    
+    # calculate the start and end points of the square
+    x_start_1 = int(max(x_pix - marker_size_pixels / 2, 0))
+    x_end_1 = int(min(x_pix + marker_size_pixels / 2, pixel_width))
+    y_start_1 = int(max(y_pix - marker_size_pixels / 2, 0))
+    y_end_1 = int(min(y_pix + marker_size_pixels / 2, pixel_height))
+    
+    # Define the area with an array of coordinates
+    area_1 = [[px, py] for px in range(x_start_1, x_end_1) for py in range(y_start_1, y_end_1)]
+    
+    data.data.loc[data.data['ID'] == id, 'covered_pixels_real'] = data.data.loc[data.data['ID'] == id, 'covered_pixels_real'].apply(lambda x: area_1)
 
 
 

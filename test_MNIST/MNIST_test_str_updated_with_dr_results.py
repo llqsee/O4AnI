@@ -72,7 +72,6 @@ analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight
 # analysis.importance_metric(important_cal_method = 'leverage_score', weight_diff_class=20, weight_same_class=0, order_variable='importance_index', asending=False)
 # analysis.importance_metric(important_cal_method = 'influence_distance', weight_diff_class=20, weight_same_class=0, order_variable='importance_index', asending=True)
 
-analysis.result
 
 max_value = np.nanmax(np.nan_to_num(analysis.other_layer_matrix, nan=np.nan))
 min_value = np.nanmin(np.nan_to_num(analysis.other_layer_matrix, nan=np.nan))
