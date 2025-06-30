@@ -52,9 +52,6 @@ from Our_metrics.Scatter_Metrics import Scatter_Metric
 from datasets.generateData import load_data  # Ensure this module and function are correctly defined
 import numpy as np
 
-# Assuming 'data' is loaded and preprocessed correctly
-analysis = Scatter_Metric(data, )
-
 # Generating a quality metric class
 analysis.plot_scatter_cal_matrix(
                         margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
