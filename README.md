@@ -1,4 +1,4 @@
-# O4AnI: A Novel Overlap Measure for Anomaly Identification in Multi-Class Scatterplots
+# OM4AnI: A Novel Overlap Measure for Anomaly Identification in Multi-Class Scatterplots
 
 ## Overview
 This project is designed to measure the overplotting of scatterplots in context of XAI, using advanced statistical and visualization techniques. The core of the project is the `Scatter_Metric` class, which provides functionalities for generating scatter plots, pixel matrices, heatmaps, and calculating quality metric values for scatterplots.
@@ -52,17 +52,22 @@ from Our_metrics.Scatter_Metrics import Scatter_Metric
 from datasets.generateData import load_data  # Ensure this module and function are correctly defined
 import numpy as np
 
+
+file_location = 'datasets/mnist/mnist_pred_updated_str.csv'
+
+data = load_data(file_location)  # Make sure load_data is properly defined
+
 # Generating a quality metric class
-analysis.plot_scatter_cal_matrix(
-                        margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
-                        marker = 'plus_symbol', 
-                        marker_size = 25, 
-                        cmap='tab10',
+analysis = Scatter_Metric(data, 
+                          margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
+                        marker = 'plus', 
+                        marker_size = 10, 
                         dpi = 100, 
-                        figsize= (10, 6),
-                        xvariable = 'X coordinate', 
-                        yvariable = 'Y coordinate',
-                        zvariable='pred'
+                        figsize= (12, 8),
+                        xvariable = 'X coordinate',
+                        yvariable = 'Y coordinate', 
+                        zvariable='pred',
+                        color_map='tab10'
                         )
 
 # Calculate the quality metric
