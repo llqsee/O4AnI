@@ -1,0 +1,11 @@
+csv_files_1/: A folder containing 81 files in CSV format.
+
+example_scatterplots/: A folder containing 81 scatterplots generated from the csv_files_1 files, serving as representative visual examples.
+
+figure_files_0623_evening/: A folder containing 972 scatterplot figures created from the DR_data files by varying marker sizes and rendering orders.
+
+figure_files_0623_evening_groups/: A folder containing the same 972 figures as above, but organized into two groups based on visual separation quality: well-separated and not-separated.
+
+LabelInformation.Simulated_1csv: A CSV file providing metadata for each dataset, including cluster shapes and the presence of correlation between cluster pairs.
+
+metadata_metrics_simulated_0623_evening.csv: A CSV file containing the results of the visual quality metrics (VQM) for each scatterplot, etc.

@@ -1,0 +1,13 @@
+original_data/: A folder containing 81 original datasets in CSV format.
+
+DR_data/: A folder containing 243 CSV files derived from the original datasets using three different dimensionality reduction methods.
+
+ExampleFigures/: A folder containing 81 scatterplots generated from the DR_data files, serving as representative visual examples.
+
+figure_files_0623_afternoon/: A folder containing 2,196 scatterplot figures created from the DR_data files by varying marker sizes and rendering orders.
+
+figure_files_0623_afternoon_groups/: A folder containing the same 2,196 figures as above, but organized into two groups based on visual separation quality: well-separated and not-separated.
+
+LabelInformation.csv: A CSV file providing metadata for each dataset, including cluster shapes and the presence of correlation between cluster pairs.
+
+metadata_metrics_sedlmair_0623_afternoon.csv: A CSV file containing the results of the visual quality metrics (VQM) for each scatterplot, etc.

@@ -4,6 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from datasets.generateData import load_and_sample_data, load_data
 from Our_metrics.Scatter_Metrics import Scatter_Metric
+from Compared_metrics.CDM import CDM_Metric
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
 from datasets.generateData import load_data  # Ensure this module and function are correctly defined
@@ -28,37 +29,64 @@ file_location = 'datasets/mnist/mnist_pred_updated_str.csv'
 
 data = load_data(file_location)  # Make sure load_data is properly defined
 
+
+# Filter the data to keep only rows where 'pred' is 'digit_3', 'digit_5', or 'digit_8'
+# data = data[data['pred'].isin(['digit_3', 'digit_5', 'digit_8'])].reset_index(drop=True)
+# data = data[data['pred'].isin(['digit_8'])].reset_index(drop=True)
+
+
+# analysis = Scatter_Metric(data)
+
 analysis = Scatter_Metric(data, 
                           margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
                         marker = 'square', 
-                        marker_size = 50, 
+                        marker_size = 25, 
                         dpi = 100, 
                         figsize= (12, 8),
                         xvariable = 'X coordinate',
                         yvariable = 'Y coordinate', 
                         zvariable='pred',
                         color_map='tab10'
+                        # Larger fonts for paper-quality figures
+                        # label_fontsize=28,
+                        # title_fontsize=32,
+                        # tick_fontsize=20,
+                        # legend_fontsize=20,
+                        # legend_title_fontsize=22,
+                        # colorbar_label_fontsize=24,
+                        # colorbar_tick_fontsize=18
                         )
 
 
 
 # projected_labels = random.sample(data['pred'].unique().tolist(), len(data['pred'].unique()))
 
-projected_labels = ['digit_2', 'digit_8', 'digit_5', 'digit_7', 'digit_3', 'digit_4', 'digit_1', 'digit_0', 'digit_6', 'digit_9']
-# projected_labels = ['digit_7', 'digit_3', 'digit_4', 'digit_1', 'digit_0', 'digit_6', 'digit_9', 'digit_2', 'digit_8', 'digit_5']
-analysis._sort_data(attribute = 'pred', order = projected_labels)
 
 # Randomly shuffle the data
 # shuffled_data = analysis.data.sample(frac=1, random_state=random.randint(0, 1000)).reset_index(drop=True)
 # analysis.data = shuffled_data
 
-analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=10, weight_same_class=1)
+# analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=10, weight_same_class=1)
+
+render_order = 'category_based'  # 'importance_index', 'category_based', 'random'
+
+if render_order == 'importance_index':
+    analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=100, weight_same_class=0, order_variable='importance_index', asending=True)
+elif render_order == 'category_based':
+
+    projected_labels = ['digit_2', 'digit_8', 'digit_5', 'digit_7', 'digit_3', 'digit_4', 'digit_1', 'digit_0', 'digit_6', 'digit_9']
+    # projected_labels = ['digit_7', 'digit_3', 'digit_4', 'digit_1', 'digit_0', 'digit_6', 'digit_9', 'digit_2', 'digit_8', 'digit_5']
+    analysis._sort_data(attribute = 'pred', order = projected_labels)
+    analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=100, weight_same_class=0)
+elif render_order == 'random':
+    shuffled_data = analysis.data.sample(frac=1, random_state=random.randint(0, 1000)).reset_index(drop=True)
+    analysis.data = shuffled_data
+    analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=10, weight_same_class=0)
+    
 
 
 
 
-
-# analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=10, weight_same_class=1, order_variable='importance_index', asending=True)
 # analysis.importance_metric(important_cal_method = 'lof_distance', weight_diff_class=20, weight_same_class=1, order_variable='importance_index', asending=False)
 # analysis.importance_metric(important_cal_method = 'average_linkage_method', weight_diff_class=20, weight_same_class=1, order_variable='importance_index', asending=False)
 # analysis.importance_metric(important_cal_method = 'complete_linkage_method', weight_diff_class=20, weight_same_class=1, order_variable='importance_index', asending=False)
@@ -90,8 +118,10 @@ analysis.save_heatmap(filename = 'test_MNIST/heat_map_mnist_pred_updated_str.png
 analysis.bar_for_importance(analysis.data)
 analysis.save_importance_bar(filename = 'test_MNIST/importance_bar_distribution_mnist_pred_updated_str.png')
 
-
-analysis.plot_density_heatmap(filename = 'test_MNIST/density_heatmap_mnist_pred_updated_str.png')
+# analysis.plot_density_heatmap(filename = 'test_MNIST/density_heatmap_mnist_pred_updated_str.png')
 
 
 analysis.distance_consistency()
+
+
+

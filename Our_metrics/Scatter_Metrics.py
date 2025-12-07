@@ -29,7 +29,16 @@ class Scatter_Metric:
                  xvariable = None, 
                  yvariable = None, 
                  zvariable = None, 
-                 color_map = 'tab10'):
+                 color_map = 'tab10',
+                 alpha = 1,
+                 # Font size controls
+                 label_fontsize: int = 20,
+                 title_fontsize: int = 22,
+                 tick_fontsize: int = 18,
+                 legend_fontsize: int = 16,
+                 legend_title_fontsize: int = 18,
+                 colorbar_label_fontsize: int = 18,
+                 colorbar_tick_fontsize: int = 16):
         # ======================================================================================================
         # Initialize the class and set the parameters for all kinds of metrics
         self.data = data
@@ -46,6 +55,16 @@ class Scatter_Metric:
         self.use_colors = None
         self.pixel_color_width = None
         self.pixel_color_height = None
+        self.alpha = alpha
+
+        # Font sizes
+        self.label_fontsize = label_fontsize
+        self.title_fontsize = title_fontsize
+        self.tick_fontsize = tick_fontsize
+        self.legend_fontsize = legend_fontsize
+        self.legend_title_fontsize = legend_title_fontsize
+        self.colorbar_label_fontsize = colorbar_label_fontsize
+        self.colorbar_tick_fontsize = colorbar_tick_fontsize
         
         # -----------------------------------------------------------------------------------------------
         #  Calculate how many pixels in each axis of scatterplot
@@ -64,8 +83,9 @@ class Scatter_Metric:
             # If zvariable is categorical, map it to actual colors
             self.use_colors = 'yes'
             unique_categories = sorted(self.data[zvariable].unique())
+            # unique_categories = ['group_1', 'group_0', 'group_4' ,  'group_3', 'group_2']
             color_map = plt.get_cmap(self.color_map)
-            self.color_map_function = {category: color_map(i) for i, category in enumerate(sorted(unique_categories))}
+            self.color_map_function = {category: color_map(i) for i, category in enumerate(unique_categories)}
             self.unique_categories = unique_categories
         elif self.data[zvariable].dtype == 'float64':
             self.use_colors = 'continous'
@@ -175,14 +195,15 @@ class Scatter_Metric:
             mk = 'P'
 
         if self.use_colors == 'yes':
-            self.ax.scatter(x_values, y_values, alpha=1, edgecolor='none', marker=mk, s=self.marker_size, c=[self.color_map_function[cat] for cat in self.data[self.zvariable]])
+            self.ax.scatter(x_values, y_values, alpha=self.alpha, edgecolor='none', marker=mk, s=self.marker_size, c=[self.color_map_function[cat] for cat in self.data[self.zvariable]])
+
 
             # ======================================================================================================
             # Add the legend to the plot for the categorical data
             handles = [plt.Line2D([0], [0], marker=mk, color='w', label=category,
                                 markerfacecolor=color, markersize=10) for category, color in self.color_map_function.items()]
             # Add the legend to the plot
-            plt.legend(title=self.zvariable, handles=handles, bbox_to_anchor=(1, 1), loc='upper left', fontsize=16, title_fontsize=18)
+            plt.legend(title=self.zvariable, handles=handles, bbox_to_anchor=(1, 1), loc='upper left', fontsize=self.legend_fontsize, title_fontsize=self.legend_title_fontsize)
             # ======================================================================================================
         elif self.use_colors == 'no':
             self.ax.scatter(x_values, y_values, alpha=1, edgecolor='none', marker=mk, s=self.marker_size, color='black')
@@ -200,8 +221,8 @@ class Scatter_Metric:
 
             # Add the colorbar to the current figure based on ScalarMappable
             cbar = plt.colorbar(sm, ax=self.ax)  # 'ax' should be the current axes object of your plot
-            cbar.set_label(self.zvariable, fontdict={'fontsize': 18})  # Label the colorbar with your variable name
-            cbar.ax.tick_params(labelsize=16)  # Modify the font size of the colorbar ticks
+            cbar.set_label(self.zvariable, fontdict={'fontsize': self.colorbar_label_fontsize})  # Label the colorbar with your variable name
+            cbar.ax.tick_params(labelsize=self.colorbar_tick_fontsize)  # Modify the font size of the colorbar ticks
             # ======================================================================================================
             
         
@@ -220,11 +241,11 @@ class Scatter_Metric:
         self.ax.set_ylim(self.data[self.yvariable].min() - y_margin, self.data[self.yvariable].max() + y_margin)
         self.xrange = [self.data[self.xvariable].min(), self.data[self.xvariable].max()]
         self.yrange = [self.data[self.yvariable].min(), self.data[self.yvariable].max()]
-        self.ax.set_xlabel(self.xvariable, fontsize=20)
-        self.ax.set_ylabel(self.yvariable, fontsize=20)
-        self.ax.set_title(f'Scatterplot of {self.xvariable} and {self.yvariable}', fontsize=22)
+        self.ax.set_xlabel(self.xvariable, fontsize=self.label_fontsize)
+        self.ax.set_ylabel(self.yvariable, fontsize=self.label_fontsize)
+        self.ax.set_title(f'Scatterplot of {self.xvariable} and {self.yvariable}', fontsize=self.title_fontsize)
         # Setting the tick label size
-        self.ax.tick_params(axis='both', which='major', labelsize=18)
+        self.ax.tick_params(axis='both', which='major', labelsize=self.tick_fontsize)
         self.fig.canvas.draw()  # Ensure the plot is fully rendered in the canvas
         
 
@@ -449,12 +470,14 @@ class Scatter_Metric:
         importance_values = self.data['importance_index']
 
         scatter = plt.scatter(x_values, y_values, c=importance_values, cmap=cmap, s=self.marker_size, edgecolor='face' if mk in ['o', 's'] else 'none', marker=mk)
-        plt.colorbar(scatter, label='Importance Index')
-        plt.xlabel(self.xvariable, fontsize=18)
-        plt.ylabel(self.yvariable, fontsize=18)
-        plt.title('Scatterplot with Importance Index as Color', fontsize=20)
-        plt.xticks(fontsize=16)
-        plt.yticks(fontsize=16)
+        cbar = plt.colorbar(scatter)
+        cbar.set_label('Importance Index', fontsize=self.colorbar_label_fontsize)
+        cbar.ax.tick_params(labelsize=self.colorbar_tick_fontsize)
+        plt.xlabel(self.xvariable, fontsize=self.label_fontsize)
+        plt.ylabel(self.yvariable, fontsize=self.label_fontsize)
+        plt.title('Scatterplot with Importance Index as Color', fontsize=self.title_fontsize)
+        plt.xticks(fontsize=self.tick_fontsize)
+        plt.yticks(fontsize=self.tick_fontsize)
         
         if grid:
             # Add grid lines based on specific numbers
@@ -463,8 +486,8 @@ class Scatter_Metric:
             x_ticks = np.linspace(x_min, x_max, x_grid)
             y_ticks = np.linspace(y_min, y_max, y_grid)
             plt.grid(which='both', linestyle='-', linewidth=1.5, alpha=1.0)
-            plt.xticks(np.array(x_ticks).flatten(), fontsize=16)
-            plt.yticks(np.array(y_ticks).flatten(), fontsize=16)
+            plt.xticks(np.array(x_ticks).flatten(), fontsize=self.tick_fontsize)
+            plt.yticks(np.array(y_ticks).flatten(), fontsize=self.tick_fontsize)
 
         # Save or show the plot
         if filename:
@@ -496,12 +519,14 @@ class Scatter_Metric:
         plt.figure(figsize=self.figsize, dpi=self.dpi)
         plt.imshow(heatmap, extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]],
                    origin='lower', cmap=cmap, aspect='auto')
-        plt.colorbar(label='Density').ax.tick_params(labelsize=16)  # Make colorbar labels bigger
+        cb = plt.colorbar(label='Density')
+        cb.ax.tick_params(labelsize=self.colorbar_tick_fontsize)  # Make colorbar tick labels bigger
+        cb.set_label('Density', fontsize=self.colorbar_label_fontsize)
         # plt.title('Density Heatmap', fontsize=20)
-        plt.xlabel(self.xvariable, fontsize=18)
-        plt.ylabel(self.yvariable, fontsize=18)
-        plt.xticks(fontsize=16)  # Make x-axis tick labels bigger
-        plt.yticks(fontsize=16)  # Make y-axis tick labels bigger
+        plt.xlabel(self.xvariable, fontsize=self.label_fontsize)
+        plt.ylabel(self.yvariable, fontsize=self.label_fontsize)
+        plt.xticks(fontsize=self.tick_fontsize)  # Make x-axis tick labels bigger
+        plt.yticks(fontsize=self.tick_fontsize)  # Make y-axis tick labels bigger
         plt.grid(False)
         if filename:
             plt.savefig(filename, dpi=self.dpi, bbox_inches='tight')
@@ -1113,51 +1138,73 @@ class Scatter_Metric:
         if self.pixel_color_matrix is None:
             raise ValueError("pixel_color_matrix is not initialized. Run importance_metric or relevant method first.")
 
-        # Recompute covered_pixels for each data point
-        for i in self.data.index:
-            x = self.data[self.xvariable][i]
-            y = self.data[self.yvariable][i]
-            idx = self.data['ID'][i]
-            x_pix, y_pix = self.ax.transData.transform((x, y))
-            x_pix = int(x_pix - self.figsize[0] * self.dpi * self.margins['left'])
-            y_pix = int(y_pix - self.figsize[1] * self.dpi * self.margins['bottom'])
-            if self.marker == 'square':
-                area_square(self, x_pix, y_pix, idx, self.marker_size, self.pixel_width, self.pixel_height)
-            elif self.marker == 'circle':
-                area_circle(self, x_pix, y_pix, idx, self.marker_size, self.pixel_width, self.pixel_height)
-            elif self.marker == 'triangle':
-                area_triangle(self, x_pix, y_pix, idx, self.marker_size, self.pixel_width, self.pixel_height)
-            elif self.marker == 'plus':
-                area_plus(self, x_pix, y_pix, idx, self.marker_size, self.pixel_width, self.pixel_height)
+        # Build per-ID pixel sets from the authoritative pixel_color_matrix
+        H, W = self.pixel_color_matrix.shape
+        from collections import defaultdict
+        pixels_per_id = defaultdict(set)
 
+        for py in range(H):
+            for px in range(W):
+                stack = self.pixel_color_matrix[py, px]
+                if not stack:
+                    continue
+                for elem in stack:
+                    if isinstance(elem, dict) and 'ID' in elem:
+                        pixels_per_id[elem['ID']].add((px, py))
+
+        num_covered_any = 0
         num_covered_by_diff_class = 0
         num_covered_pixels_anomaly = 0
-        covered_categories = []
 
-        for idx, datum in self.data.iterrows():
-            # Check if all covered_pixels are occluded by a different class on top
-            is_fully_covered_by_diff_class = True
-            for pix in datum['covered_pixels']:
-                stack = self.pixel_color_matrix[pix[1], pix[0]]
-                if not stack or stack[-1]['category'] == datum[self.zvariable]:
-                    is_fully_covered_by_diff_class = False
+        for _, datum in self.data.iterrows():
+            idx = datum['ID']
+            my_class = datum.get(self.zvariable)
+            my_pixels = pixels_per_id.get(idx, set())
+            if not my_pixels:
+                continue
+
+            fully_covered_any = True
+            fully_covered_by_diff = True
+
+            for (px, py) in my_pixels:
+                stack = self.pixel_color_matrix[py, px]
+                if not stack:
+                    fully_covered_any = False
+                    fully_covered_by_diff = False
                     break
-            if is_fully_covered_by_diff_class and len(datum['covered_pixels']) > 0:
-                covered_categories.append(datum[self.zvariable])
+                top = stack[-1]
+                top_id = top.get('ID') if isinstance(top, dict) else None
+                top_cat = top.get('category') if isinstance(top, dict) else None
+                if top_id == idx:
+                    fully_covered_any = False
+                    fully_covered_by_diff = False
+                    break
+                if top_cat == my_class:
+                    fully_covered_by_diff = False
+
+            if fully_covered_any:
+                num_covered_any += 1
+            if fully_covered_by_diff:
                 num_covered_by_diff_class += 1
 
-            # For anomaly points, count pixels where topmost is a different category
+            # anomaly diagnostic (if applicable)
             if 'cluster_label' in datum and 'class' in datum and datum['cluster_label'] != datum['class']:
-                for pix in datum['covered_pixels_real']:
-                    stack = self.pixel_color_matrix[pix[1], pix[0]]
-                    if stack and stack[-1]['category'] != datum[self.zvariable]:
+                real_pixels = datum.get('covered_pixels_real') or list(my_pixels)
+                for pix in real_pixels:
+                    if not isinstance(pix, (list, tuple)) or len(pix) < 2:
+                        continue
+                    px, py = int(pix[0]), int(pix[1])
+                    if px < 0 or py < 0 or py >= H or px >= W:
+                        continue
+                    stack = self.pixel_color_matrix[py, px]
+                    if stack and isinstance(stack[-1], dict) and stack[-1].get('category') != my_class:
                         num_covered_pixels_anomaly += 1
 
-        # Print summary
+        print(f'The number of data points that are totally covered by other data points: {num_covered_any}')
         print(f'The number of data points totally covered by other class data points: {num_covered_by_diff_class}')
         print(f'The number of covered pixels for anomaly data points: {num_covered_pixels_anomaly}')
 
-        return num_covered_by_diff_class, num_covered_pixels_anomaly
+        return num_covered_any, num_covered_by_diff_class, num_covered_pixels_anomaly
     
     
     
@@ -1364,11 +1411,11 @@ class Scatter_Metric:
 
         self.heatax.invert_yaxis()  # Reverse the y-axis
         # plt.title("Heatmap for Hidden Information")
-        plt.xlabel("Pixel X", fontsize=18)
-        plt.ylabel("Pixel Y", fontsize=18)
+        plt.xlabel("Pixel X", fontsize=self.label_fontsize)
+        plt.ylabel("Pixel Y", fontsize=self.label_fontsize)
         
         # Set the font size of the tick labels
-        self.heatax.tick_params(axis='both', which='major', labelsize=16)
+        self.heatax.tick_params(axis='both', which='major', labelsize=self.tick_fontsize)
         
         # Reduce the number of ticks on the x and y axes
         # x_ticks_interval = max(1, matrix.shape[1] // 3)  # Adjust the tick interval as needed
@@ -1392,7 +1439,7 @@ class Scatter_Metric:
         # Reduce the number of ticks on the colorbar
         cbar.locator = plt.MaxNLocator(nbins=5)
         cbar.update_ticks()
-        cbar.ax.tick_params(labelsize=16)
+        cbar.ax.tick_params(labelsize=self.colorbar_tick_fontsize)
         
 
         # Add a border (spines) around the entire heatmap
@@ -1449,10 +1496,13 @@ class Scatter_Metric:
         self.importance_fig.subplots_adjust(left=margins['left'], right=margins['right'], top=margins['top'], bottom=margins['bottom'])
         # Create the scatter plot
         scatter = self.importance_ax.scatter(data[self.xvariable], data[self.yvariable], edgecolor='none', marker='o', s=20, c=data['importance_index'], alpha=1)
-        plt.colorbar(scatter, ax=self.importance_ax, label='Importance Index')  # Add a color bar to show the importance index
-        self.importance_ax.set_title("Scatter Plot of Importance Index")
-        self.importance_ax.set_xlabel(self.xvariable)
-        self.importance_ax.set_ylabel(self.yvariable)
+        cbar = plt.colorbar(scatter, ax=self.importance_ax)
+        cbar.set_label('Importance Index', fontsize=self.colorbar_label_fontsize)
+        cbar.ax.tick_params(labelsize=self.colorbar_tick_fontsize)
+        self.importance_ax.set_title("Scatter Plot of Importance Index", fontsize=self.title_fontsize)
+        self.importance_ax.set_xlabel(self.xvariable, fontsize=self.label_fontsize)
+        self.importance_ax.set_ylabel(self.yvariable, fontsize=self.label_fontsize)
+        self.importance_ax.tick_params(axis='both', which='major', labelsize=self.tick_fontsize)
         self.importance_ax.grid(True)
         # Do not show the plot here
         self.importance_fig.canvas.draw()
@@ -1478,9 +1528,10 @@ class Scatter_Metric:
         # Create the histogram
         importance_values = data['importance_index']
         self.importance_bar_distribution_ax.hist(importance_values, bins=30, color='skyblue', edgecolor='black')
-        self.importance_bar_distribution_ax.set_title("Distribution of Importance Index")
-        self.importance_bar_distribution_ax.set_xlabel("Importance Index")
-        self.importance_bar_distribution_ax.set_ylabel("Frequency")
+        self.importance_bar_distribution_ax.set_title("Distribution of Importance Index", fontsize=self.title_fontsize)
+        self.importance_bar_distribution_ax.set_xlabel("Importance Index", fontsize=self.label_fontsize)
+        self.importance_bar_distribution_ax.set_ylabel("Frequency", fontsize=self.label_fontsize)
+        self.importance_bar_distribution_ax.tick_params(axis='both', which='major', labelsize=self.tick_fontsize)
         self.importance_bar_distribution_ax.set_yscale('log')  # Set y-axis to log scale
         self.importance_bar_distribution_ax.grid(True)
         # Do not show the plot here

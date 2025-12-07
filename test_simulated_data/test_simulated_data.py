@@ -4,6 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from datasets.generateData import load_and_sample_data, load_data
 from Our_metrics.Scatter_Metrics import Scatter_Metric
+from Compared_metrics.CDM import CDM_Metric
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
 from datasets.generateData import load_data  # Ensure this module and function are correctly defined
@@ -23,9 +24,15 @@ importance_index_methods = ['mahalanobis_distance', 'isolation_forest', 'lof_for
                             ]
 
 
-# dataset_name = 'clusternumber2_datanumber500_testnumbercategorylarge_repeatnumber0'   # It's the examples put in the paper
-dataset_name = 'clusternumber3_datanumber200_testnumbercategorymedium_repeatnumber1'  # This is for the workflow chart in the paper (check the bugs based on this dataset))
+# dataset_name = 'clusternumber2_datanumber500_testnumbercategorylarge_repeatnumber0'   # It's the Examples of generated scatterplots put in the paper
+# dataset_name = 'clusternumber3_datanumber200_testnumbercategorymedium_repeatnumber1'  # This is Examples of generated scatterplots in the paper (check the bugs based on this dataset))
 # dataset_name = 'clusternumber3_datanumber200_testnumbercategorylarge_repeatnumber0'
+# dataset_name = 'clusternumber3_datanumber200_testnumbercategorymedium_repeatnumber2'  # This is for the workflow chart in the paper
+
+
+dataset_name = 'clusternumber5_datanumber200_testnumbercategorylarge_repeatnumber0'  # This is for the workflow chart in the paper
+
+
 
 # file_location = 'datasets/simulated_datasets/csv_files_1/clusternumber2_datanumber200_testnumbercategorysmall_repeatnumber1.csv'
 # file_location = 'datasets/simulated_datasets/csv_files_1/clusternumber3_datanumber200_testnumbercategorylarge_repeatnumber0.csv'
@@ -47,7 +54,7 @@ analysis = Scatter_Metric(data)
 
 render_order_methods = ['category_based']
 # render_order_methods = ['ascending']
-marker_sizes = [110]
+marker_sizes = [60]
 
 # render_order_methods = ['descending']
 # marker_sizes = [50]
@@ -58,7 +65,7 @@ weight_same_class = 0
 for rm in render_order_methods:
     for mk in marker_sizes:
         analysis = Scatter_Metric(data, 
-                                margins = {'left':0, 'right': 1, 'top':1, 'bottom': 0},
+                                margins={'left': 0.15, 'right': 0.75, 'top': 0.9, 'bottom': 0.1},
                                 marker = 'square', 
                                 marker_size = mk, 
                                 dpi = 100, 
@@ -107,17 +114,23 @@ for rm in render_order_methods:
         # Convert numpy array to list for JSON serialization
         pixel_color_matrix_list = analysis.pixel_color_matrix.tolist()
 
+        # Ensure output directory exists under test_simulated_data/output
+        out_dir = os.path.join(os.path.dirname(__file__), 'output')
+        os.makedirs(out_dir, exist_ok=True)
+
         # Save to JSON file
-        with open(f'test_simulated_data/pixel_color_matrix_{rm}markersize{mk}_{dataset_name}.json', 'w') as f:
+        with open(os.path.join(out_dir, f'pixel_color_matrix_{rm}markersize{mk}_{dataset_name}.json'), 'w') as f:
             json.dump(pixel_color_matrix_list, f)
-            
 
-        analysis.data.to_csv(f'test_simulated_data/analysis_data_{rm}markersize{mk}_{dataset_name}.csv', index=False)
+        analysis.data.to_csv(os.path.join(out_dir, f'analysis_data_{rm}markersize{mk}_{dataset_name}.csv'), index=False)
 
-        analysis.save_figure(filename = f'test_simulated_data/figure_{rm}markersize{mk}_{dataset_name}.png')
-        analysis.save_heatmap(filename = f'test_simulated_data/figure_{rm}markersize{mk}_{dataset_name}_heatmap.png')
+        analysis.save_figure(filename = os.path.join(out_dir, f'figure_{rm}markersize{mk}_{dataset_name}.png'))
+        analysis.save_heatmap(filename = os.path.join(out_dir, f'figure_{rm}markersize{mk}_{dataset_name}_heatmap.png'))
 
         # analysis.bar_for_importance(analysis.data)
         # analysis.save_importance_bar(filename = 'test_simulated_data/importance_bar_distribution_simulated_data.png')
 
-        analysis.plot_scatter_with_importance(filename = 'test_simulated_data/scatterplot_with_importance_' + dataset_name + '.png', grid=True, x_grid=50, y_grid=60)
+        analysis.plot_scatter_with_importance(filename = os.path.join(out_dir, 'scatterplot_with_importance_' + dataset_name + '.png'), grid=True, x_grid=50, y_grid=60)
+        
+        
+        
