@@ -203,7 +203,8 @@ class Scatter_Metric:
             handles = [plt.Line2D([0], [0], marker=mk, color='w', label=category,
                                 markerfacecolor=color, markersize=10) for category, color in self.color_map_function.items()]
             # Add the legend to the plot
-            plt.legend(title=self.zvariable, handles=handles, bbox_to_anchor=(1, 1), loc='upper left', fontsize=self.legend_fontsize, title_fontsize=self.legend_title_fontsize)
+            legend_title = self.zvariable.capitalize() if isinstance(self.zvariable, str) else self.zvariable
+            plt.legend(title=legend_title, handles=handles, bbox_to_anchor=(1, 1), loc='upper left', fontsize=self.legend_fontsize, title_fontsize=self.legend_title_fontsize)
             # ======================================================================================================
         elif self.use_colors == 'no':
             self.ax.scatter(x_values, y_values, alpha=1, edgecolor='none', marker=mk, s=self.marker_size, color='black')
@@ -1436,6 +1437,8 @@ class Scatter_Metric:
         
         # Increase the font size of the color palette
         cbar = heatmap.collections[0].colorbar
+        legend_title = cbar.ax.set_title('Legend', fontsize=self.colorbar_label_fontsize, pad=12)
+        legend_title.set_position((2.5, 1.07))
         # Reduce the number of ticks on the colorbar
         cbar.locator = plt.MaxNLocator(nbins=5)
         cbar.update_ticks()

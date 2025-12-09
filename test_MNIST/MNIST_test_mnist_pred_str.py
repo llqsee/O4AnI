@@ -38,7 +38,7 @@ data = load_data(file_location)  # Make sure load_data is properly defined
 # analysis = Scatter_Metric(data)
 
 analysis = Scatter_Metric(data, 
-                          margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
+                        margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
                         marker = 'square', 
                         marker_size = 25, 
                         dpi = 100, 
@@ -68,7 +68,7 @@ analysis = Scatter_Metric(data,
 
 # analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=10, weight_same_class=1)
 
-render_order = 'category_based'  # 'importance_index', 'category_based', 'random'
+render_order = 'importance_index'  # 'importance_index', 'category_based', 'random'
 
 if render_order == 'importance_index':
     analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=100, weight_same_class=0, order_variable='importance_index', asending=True)
@@ -111,6 +111,8 @@ else:
 # analysis.visualize_heat_map(normalized_matrix)
 # analysis.visualize_heat_map(analysis.other_layer_matrix)
 analysis.visualize_heat_map(analysis.overall_layer_matrix)
+
+# analysis.cal_covered_data_points()
 
 analysis.save_figure(filename = 'test_MNIST/scatterplot_mnist_pred_updated_str.png')
 analysis.save_heatmap(filename = 'test_MNIST/heat_map_mnist_pred_updated_str.png')
