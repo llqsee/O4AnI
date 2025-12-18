@@ -84,3 +84,10 @@ Figure 1: Scatterplot generated from the data and specific parameters.
 Figure 2: Heatmap illustrating which region hide more important information (important data points).
 
 The calculated quality metric for this example is 0.24, which quantifies the level of overplotting in the scatterplot.
+
+## Citation
+If you build on OM4AnI, please cite the original paper:
+
+> L. Liu, L. Bogachev, M. Rezaei, N. Ravikumar, A. Khara, and M. Azarmi, "OM4AnI: A Novel Overlap Measure for Anomaly Identification in Multi-Class Scatterplots," *IEEE Transactions on Visualization and Computer Graphics*, Early Access, 2025. [https://doi.org/10.1109/TVCG.2025.3642219](https://doi.org/10.1109/TVCG.2025.3642219)
+
+The article is available via the IEEE Computer Society Digital Library: https://www.computer.org/csdl/journal/tg/5555/01/11295941/2ckEozKDT7G.
