@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from datasets.generateData import load_and_sample_data, load_data
 from Our_metrics.Scatter_Metrics import Scatter_Metric
-from Compared_metrics.CDM import CDM_Metric
+# from Compared_metrics.CDM import CDM_Metric
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
 from datasets.generateData import load_data  # Ensure this module and function are correctly defined
@@ -43,12 +43,14 @@ data = load_data(file_location)  # Make sure load_data is properly defined
 # ['Wife', 'Husband', 'Not-in-family',  'Own-child', 'Unmarried']
 # data_abstract = data[data['Relationship'].isin(['Not-in-family','Other-relative'])]
 data_abstract = data[data['Relationship'].isin(['Own-child', 'Husband'])]
+# data_abstract = data[data['Relationship'].isin(['Own-child'])]
+
 
 
 analysis=Scatter_Metric(data_abstract,
                         margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
                         marker = 'square', 
-                        marker_size = 100, 
+                        marker_size = 20, 
                         dpi = 100, 
                         color_map='tab10',
                         figsize= (10, 6),
@@ -56,6 +58,13 @@ analysis=Scatter_Metric(data_abstract,
                         yvariable = 'Age_shap',
                         zvariable= 'Relationship'
                         )
+
+# Swap colors so Own-child and Husband use opposite hues compared to the default ordering
+if analysis.color_map_function is not None:
+    if 'Own-child' in analysis.color_map_function and 'Husband' in analysis.color_map_function:
+        husband_color = analysis.color_map_function['Husband']
+        analysis.color_map_function['Husband'] = analysis.color_map_function['Own-child']
+        analysis.color_map_function['Own-child'] = husband_color
 
 
 
@@ -66,6 +75,7 @@ if render_order == 'importance_index':
 elif render_order == 'category_based':
 
     projected_labels = ['Own-child', 'Husband']
+    # projected_labels = ['Husband', 'Own-child']
     analysis._sort_data(attribute = 'Relationship', order = projected_labels)
     analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=100, weight_same_class=0)
 elif render_order == 'random':

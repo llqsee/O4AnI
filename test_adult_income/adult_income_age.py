@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from datasets.generateData import load_and_sample_data, load_data
 from Our_metrics.Scatter_Metrics import Scatter_Metric
-from Compared_metrics.CDM import CDM_Metric
+# from Compared_metrics.CDM import CDM_Metric
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
 from datasets.generateData import load_data  # Ensure this module and function are correctly defined
@@ -41,13 +41,14 @@ data = load_data(file_location)  # Make sure load_data is properly defined
 
 # ['Wife', 'Husband', 'Not-in-family', 'Other-relative', 'Own-child', 'Unmarried']
 # data_abstract = data[data['Relationship'].isin(['Not-in-family'])]
-data_abstract = data[data['Relationship'].isin(['Own-child', 'Husband'])]
+# data_abstract = data[data['Relationship'].isin(['Own-child', 'Husband'])]
+data_abstract = data[data['Relationship'].isin(['Own-child'])]
 
 
 analysis = Scatter_Metric(data_abstract, 
                           margins = {'left':0.2, 'right': 0.7, 'top':0.8, 'bottom': 0.2},
                         marker = 'square', 
-                        marker_size = 50, 
+                        marker_size = 10, 
                         dpi = 100, 
                         figsize= (10, 6),
                         xvariable = 'Age', 
