@@ -53,11 +53,11 @@ from Our_metrics.Scatter_Metrics import Scatter_Metric
 data = load_data('datasets/mnist/mnist_pred_updated_str.csv')
 
 # 2) Configure the analyzer
-metric = Scatter_Metric(
+analysis = Scatter_Metric(
   data=data,
   margins={'left': 0.2, 'right': 0.7, 'top': 0.8, 'bottom': 0.2},
   marker='plus',
-  marker_size=10,
+  marker_size=25,
   dpi=100,
   figsize=(12, 8),
   xvariable='X coordinate',
@@ -66,27 +66,42 @@ metric = Scatter_Metric(
   color_map='tab10'
 )
 
-# 3) Compute importance-aware overplotting score
-score = metric.importance_metric(
-  important_cal_method='mahalanobis_distance',
-  weight_diff_class=20,
-  weight_same_class=1
-)
 
-# 4) Produce visuals
-metric.plot_scatter_cal_matrix()
-metric.visualize_pixel_matrix()
-metric.save_figure('test_MNIST/scatterplot_mnist_pred_updated_str.png')
-metric.save_heatmap('test_MNIST/heat_map_mnist_pred_updated_str.png')
 
+# 3) Compute the quality metric scores based on two orders
+
+render_order = 'category_based'  # 'importance_index', 'category_based'
+
+if render_order == 'importance_index':
+    score = analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=100, weight_same_class=0, order_variable='importance_index', asending=True)
+elif render_order == 'category_based':
+
+    projected_labels = ['digit_2', 'digit_8', 'digit_5', 'digit_7', 'digit_3', 'digit_4', 'digit_1', 'digit_0', 'digit_6', 'digit_9']
+    # projected_labels = ['digit_7', 'digit_3', 'digit_4', 'digit_1', 'digit_0', 'digit_6', 'digit_9', 'digit_2', 'digit_8', 'digit_5']
+    analysis._sort_data(attribute = 'pred', order = projected_labels)
+    score = analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=100, weight_same_class=0)
+
+# 4) Print out result
 print(f"OM4AnI score: {score:.2f}")
 ```
 
-## Results
-- Scatterplot: [test_MNIST/scatterplot_mnist_pred_updated_str.png](test_MNIST/scatterplot_mnist_pred_updated_str.png)
-- Heatmap: [test_MNIST/heat_map_mnist_pred_updated_str.png](test_MNIST/heat_map_mnist_pred_updated_str.png)
 
-The provided MNIST example yields an overplotting score of approximately 0.24 (higher implies more critical overlap).
+## Results when using category_based order
+- Scatterplot: [test_MNIST/category_based_order_scatterplot.png](test_MNIST/category_based_order_scatterplot.png)
+- Heatmap: [test_MNIST/category_based_order_heatmap.png](test_MNIST/category_based_order_heatmap.png)
+
+The provided MNIST example yields an overplotting score of approximately 0.02 (higher implies more critical overlap).
+
+## Results when using importance_index (OM4AnI order)
+
+- Scatterplot: [test_MNIST/OM4AnI_order_scatterplot.png](test_MNIST/OM4AnI_order_scatterplot.png)
+- Heatmap: [test_MNIST/OM4AnI_based_order_heatmap.png](test_MNIST/OM4AnI_order_heatmap.png)
+
+The provided MNIST example yields an overplotting score of approximately 0.66, which is better than category_based order method.
+
+
+
+
 
 ## Key Methods (Scatter_Metric)
 - `plot_scatter_cal_matrix`: render the scatterplot and compute per-pixel coverage.
