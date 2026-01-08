@@ -19,7 +19,7 @@ Clone the repository and install the dependencies. The code is fully cross-platf
 
 #### On Windows:
 ```bash
-git clone https://github.com/<your-org>/O4AnI_submission.git
+git clone https://github.com/llqsee/O4AnI_submission.git
 cd O4AnI_submission
 
 # Create and activate a conda environment
@@ -33,7 +33,7 @@ pip install -r requirements.txt
 
 #### On Linux (e.g., Ubuntu/Debian):
 ```bash
-git clone https://github.com/<your-org>/O4AnI_submission.git
+git clone https://github.com/llqsee/O4AnI_submission.git
 cd O4AnI_submission
 
 # Install system dependencies for MPI and UMAP
