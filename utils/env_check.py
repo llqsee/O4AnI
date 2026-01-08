@@ -7,6 +7,12 @@ mods = {
     'scipy': 'scipy',
     'sklearn': 'sklearn',
     'statsmodels': 'statsmodels',
+    'torch': 'torch',
+    'xgboost': 'xgboost',
+    'shap': 'shap',
+    'mpi4py': 'mpi4py',
+    'dask': 'dask',
+    'umap': 'umap',
 }
 
 print('PYTHON:', sys.executable)

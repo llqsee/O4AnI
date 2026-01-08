@@ -1353,6 +1353,11 @@ class Scatter_Metric:
         """Saves the figure to a file."""
         import os
 
+        # Ensure directory exists
+        dir_name = os.path.dirname(filename)
+        if dir_name and not os.path.exists(dir_name):
+            os.makedirs(dir_name, exist_ok=True)
+
         # Extract the real extension
         ext = os.path.splitext(filename)[1]  # Get file extension
         valid_extensions = {'.png', '.jpg', '.jpeg', '.pdf', '.svg', '.eps', '.tiff', '.webp'}
@@ -1456,6 +1461,11 @@ class Scatter_Metric:
     
     def save_heatmap(self, filename='heatmap.png'):
         """Saves the figure to a file."""
+        import os
+        dir_name = os.path.dirname(filename)
+        if dir_name and not os.path.exists(dir_name):
+            os.makedirs(dir_name, exist_ok=True)
+            
         self.heatmap.savefig(filename)
         print(f"Figure saved as {filename}")
         
@@ -1547,6 +1557,11 @@ class Scatter_Metric:
         
     def save_importance_bar(self, filename='importance_bar.png'):
         """Saves the importance figure to a file."""
+        import os
+        dir_name = os.path.dirname(filename)
+        if dir_name and not os.path.exists(dir_name):
+            os.makedirs(dir_name, exist_ok=True)
+            
         self.importance_bar_distribution.savefig(filename)
         print(f"Importance figure saved as {filename}")
 

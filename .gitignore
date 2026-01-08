@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv
+venv/
+ENV/
+env/
+.env
+.vscode/
+.idea/
+# Output images
+test_MNIST/*.png
+test_adult_income/*.png
+test_simulated_data/*.png
+*.log
+logs/

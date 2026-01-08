@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 
 import os
 import pandas as pd
-import numpy as np
+
+# Define project root (one level up from this file)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 # https://www.kaggle.com/code/alexisbcook/scatter-plots/data
 
@@ -13,9 +15,14 @@ import numpy as np
 # Load the datasets and return: 1) x,y,z that are 
 def load_and_sample_data(percentage_to_extract, file_location, d1, d2, d3):
     
-    current_directory = os.getcwd()
+    # If path is relative, try to resolve it relative to PROJECT_ROOT
+    if not os.path.isabs(file_location):
+        abs_path = os.path.join(PROJECT_ROOT, file_location)
+        if os.path.exists(abs_path):
+            file_location = abs_path
+            
     # Load the CSV data into a Pandas DataFrame
-    df = pd.read_csv(os.path.join(current_directory, file_location))
+    df = pd.read_csv(file_location)
 
     # Use the 'sample' method to randomly extract rows
     df_sampled = df.sample(frac=percentage_to_extract, random_state=42)
@@ -37,9 +44,14 @@ def load_and_sample_data(percentage_to_extract, file_location, d1, d2, d3):
 
 # Just load the datasets
 def load_data(file_location):
-    current_directory = os.getcwd()
+    # If path is relative, try to resolve it relative to PROJECT_ROOT
+    if not os.path.isabs(file_location):
+        abs_path = os.path.join(PROJECT_ROOT, file_location)
+        if os.path.exists(abs_path):
+            file_location = abs_path
+            
     # Load the CSV data into a Pandas DataFrame
-    df = pd.read_csv(os.path.join(current_directory, file_location))
+    df = pd.read_csv(file_location)
     return df
     
 

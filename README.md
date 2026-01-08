@@ -1,6 +1,6 @@
 # OM4AnI: Overlap Measure for Anomaly Identification
 
-OM4AnI measures overplotting in multi-class scatterplots and highlight where important information is obscured. The core `Scatter_Metric` class builds pixel-level representations, computes quality metrics, produces scatterplots and heatmaps for highlighting where the anomalies are located.
+OM4AnI measures overplotting in multi-class scatterplots and highlights where important information is obscured. The core `Scatter_Metric` class builds pixel-level representations, computes quality metrics, and produces scatterplots and heatmaps for identifying anomalies.
 
 ## Workflow
 
@@ -8,110 +8,113 @@ Below is the computation pipeline of OM4AnI:
 
 ![OM4AnI workflow](figures/workflow.png)
 
-
-## Highlights
-- Pixel-accurate overplotting analysis for categorical or continuous classes.
-- Multiple anomaly index computation methods (e.g., Mahalanobis distance, clustering, LOF, LOWESS-based distances).
-- Configurable scatterplot/heatmap generation with legends, colorbars, and DPI-aware sizing.
-- Works with provided datasets (MNIST, adult income, simulated) or your own tabular data.
-
-## Requirements
-- Python 3.9+ (tested with Anaconda)
-- matplotlib, seaborn, scipy, numpy, pandas, scikit-learn
-
 ## Installation
+
+### 1. Requirements
+- **Python:** 3.9 or higher (tested with 3.10 and 3.11).
+- **Conda (Recommended):** We recommend using an [Anaconda](https://www.anaconda.com/) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html) environment.
+
+### 2. Setup Environment
+Clone the repository and install the dependencies. The code is fully cross-platform and supports **Windows**, **Linux**, and **macOS**.
+
+#### On Windows:
 ```bash
 git clone https://github.com/<your-org>/O4AnI_submission.git
 cd O4AnI_submission
-pip install -r requirements.txt  # or install the packages above manually
+
+# Create and activate a conda environment
+conda create -n om4ani python=3.9
+conda activate om4ani
+
+# Install dependencies
+pip install -r requirements.txt
+```
+*Note: May require [Microsoft MPI](https://www.microsoft.com/en-us/download/details.aspx?id=57467) for `mpi4py`.*
+
+#### On Linux (e.g., Ubuntu/Debian):
+```bash
+git clone https://github.com/<your-org>/O4AnI_submission.git
+cd O4AnI_submission
+
+# Install system dependencies for MPI and UMAP
+sudo apt-get update
+sudo apt-get install libopenmpi-dev build-essential
+
+# Create and activate a conda environment
+conda create -n om4ani python=3.9
+conda activate om4ani
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-## Data
-- Example CSVs live under [datasets/mnist](datasets/mnist), [datasets/adult_income](datasets/adult_income), and [datasets/simulated_datasets](datasets/simulated_datasets).
-- Expected columns: `X coordinate`, `Y coordinate`, a class column such as `pred` or `label`, plus probability columns if you want richer importance calculations.
-
-Example rows from [datasets/mnist/mnist_pred_updated_str.csv](datasets/mnist/mnist_pred_updated_str.csv):
-
-| id | pred    | label   | eval | prob_7            | prob_9            | X coordinate | Y coordinate |
-|----|---------|---------|------|-------------------|-------------------|--------------|--------------|
-| 0  | digit_7 | digit_7 | True | 1.0               | 1.26573588e-21    | 13.364994    | -41.188786   |
-| 1  | digit_9 | digit_9 | True | 9.79921998e-15    | 1.0               | -31.387823   | -60.370834   |
-| 2  | digit_2 | digit_2 | True | 8.90068924e-26    | 7.58005401e-30    | 4.835193     | 65.88922     |
-| 3  | digit_9 | digit_9 | True | 7.16228617e-13    | 1.0               | -47.098583   | -43.927925   |
-| 4  | digit_1 | digit_1 | True | 2.86185333e-12    | 5.28650500e-15    | 48.73959     | -30.200827   |
+### 3. Verify Installation
+Run the environment check script to ensure all packages are correctly installed:
+```bash
+python utils/env_check.py
+```
 
 ## Quickstart
+
+You can immediately run the provided MNIST test script from the project root:
+
+```bash
+python test_MNIST/MNIST_test_mnist_pred_str.py
+```
+
+Or use the package in your own script:
+
 ```python
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from datasets.generateData import load_data
 from Our_metrics.Scatter_Metrics import Scatter_Metric
 
-# 1) Load sample data (MNIST embedding with predictions)
+# Load sample data (automatically resolves relative to project root)
 data = load_data('datasets/mnist/mnist_pred_updated_str.csv')
 
-# 2) Configure the analyzer
+# Configure the analyzer
 analysis = Scatter_Metric(
-  data=data,
-  margins={'left': 0.2, 'right': 0.7, 'top': 0.8, 'bottom': 0.2},
-  marker='plus',
-  marker_size=25,
-  dpi=100,
-  figsize=(12, 8),
-  xvariable='X coordinate',
-  yvariable='Y coordinate',
-  zvariable='pred',
-  color_map='tab10'
+    data=data,
+    xvariable='X coordinate',
+    yvariable='Y coordinate',
+    zvariable='pred',
+    marker_size=25,
+    dpi=100
 )
 
+# Compute quality scores
+score = analysis.importance_metric(
+    important_cal_method='mahalanobis_distance', 
+    weight_diff_class=100, 
+    weight_same_class=0, 
+    order_variable='importance_index', 
+    asending=True
+)
 
+print(f"OM4AnI score: {score:.4f}")
 
-# 3) Compute the quality metric scores based on two orders
-
-render_order = 'category_based'  # 'importance_index', 'category_based'
-
-if render_order == 'importance_index':
-    score = analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=100, weight_same_class=0, order_variable='importance_index', asending=True)
-elif render_order == 'category_based':
-
-    projected_labels = ['digit_2', 'digit_8', 'digit_5', 'digit_7', 'digit_3', 'digit_4', 'digit_1', 'digit_0', 'digit_6', 'digit_9']
-    # projected_labels = ['digit_7', 'digit_3', 'digit_4', 'digit_1', 'digit_0', 'digit_6', 'digit_9', 'digit_2', 'digit_8', 'digit_5']
-    analysis._sort_data(attribute = 'pred', order = projected_labels)
-    score = analysis.importance_metric(important_cal_method = 'mahalanobis_distance', weight_diff_class=100, weight_same_class=0)
-
-# 4) Print out result
-print(f"OM4AnI score: {score:.2f}")
+# Save results (directories are created automatically)
+analysis.save_figure('output/my_scatterplot.png')
+analysis.save_heatmap('output/my_heatmap.png')
 ```
 
+## Project Structure
 
-## Results when using category_based order
-- Scatterplot: [test_MNIST/category_based_order_scatterplot.png](test_MNIST/category_based_order_scatterplot.png)
-- Heatmap: [test_MNIST/category_based_order_heatmap.png](test_MNIST/category_based_order_heatmap.png)
+- `Our_metrics/`: Core implementation of the `Scatter_Metric` class.
+- `datasets/`: Data loading utilities and sample datasets (MNIST, Adult Income, Simulated).
+- `utils/`: Helper functions for distance calculations, density analysis, and plotting.
+- `test_*/`: example scripts and test cases for different datasets.
 
-The provided MNIST example yields an overplotting score of approximately 0.02 (higher implies more critical overlap).
+## Data Format
 
-## Results when using importance_index (OM4AnI order)
-
-- Scatterplot: [test_MNIST/OM4AnI_order_scatterplot.png](test_MNIST/OM4AnI_order_scatterplot.png)
-- Heatmap: [test_MNIST/OM4AnI_based_order_heatmap.png](test_MNIST/OM4AnI_order_heatmap.png)
-
-The provided MNIST example yields an overplotting score of approximately 0.66, which is better than category_based order method.
-
-
-
-
-
-## Key Methods (Scatter_Metric)
-- `plot_scatter_cal_matrix`: render the scatterplot and compute per-pixel coverage.
-- `visualize_pixel_matrix`: heatmap of pixel density/importance.
-- `importance_metric`: compute overlap/importance score with configurable weighting.
-- `save_figure` and `save_heatmap`: persist outputs for reports.
+OM4AnI expects tabular data (CSV) with at least three columns:
+- Two numerical columns for coordinates (e.g., `X coordinate`, `Y coordinate`).
+- One categorical column for labels (e.g., `pred` or `label`).
+- (Optional) Probability columns for advanced importance weighting.
 
 ## Citation
-If you build on OM4AnI, please cite the original paper:
 
-> L. Liu, L. Bogachev, M. Rezaei, N. Ravikumar, A. Khara, and M. Azarmi, "OM4AnI: A Novel Overlap Measure for Anomaly Identification in Multi-Class Scatterplots," *IEEE Transactions on Visualization and Computer Graphics*, Early Access, 2025. [https://doi.org/10.1109/TVCG.2025.3642219](https://doi.org/10.1109/TVCG.2025.3642219)
+If you use OM4AnI in your research, please cite our paper:
 
-The article is available via the IEEE Computer Society Digital Library: https://www.computer.org/csdl/journal/tg/5555/01/11295941/2ckEozKDT7G.
+> L. Liu, L. Bogachev, M. Rezaei, N. Ravikumar, A. Khara, and M. Azarmi, "OM4AnI: A Novel Overlap Measure for Anomaly Identification in Multi-Class Scatterplots," *IEEE Transactions on Visualization and Computer Graphics*, 2025. [https://doi.org/10.1109/TVCG.2025.3642219](https://doi.org/10.1109/TVCG.2025.3642219)
