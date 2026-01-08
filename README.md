@@ -29,7 +29,6 @@ conda activate om4ani
 # Install dependencies
 pip install -r requirements.txt
 ```
-*Note: May require [Microsoft MPI](https://www.microsoft.com/en-us/download/details.aspx?id=57467) for `mpi4py`.*
 
 #### On Linux (e.g., Ubuntu/Debian):
 ```bash

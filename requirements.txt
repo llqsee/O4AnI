@@ -4,10 +4,10 @@ matplotlib
 seaborn
 scipy
 scikit-learn
-torch
-xgboost
-shap
-mpi4py
-dask
-statsmodels
-umap-learn
+# torch
+# xgboost
+# shap
+# mpi4py
+# dask
+# statsmodels
+# umap-learn
