@@ -9,5 +9,5 @@ scikit-learn
 # shap
 # mpi4py
 # dask
-# statsmodels
+statsmodels
 # umap-learn

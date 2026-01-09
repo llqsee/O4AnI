@@ -1,6 +1,6 @@
 # OM4AnI: Overlap Measure for Anomaly Identification
 
-OM4AnI measures overplotting in multi-class scatterplots and highlights where important information is obscured. The core `Scatter_Metric` class builds pixel-level representations, computes quality metrics, and produces scatterplots and heatmaps for identifying anomalies.
+OM4AnI measures how much anomalies hidden in multi-class scatterplots. The core `Scatter_Metric` class builds pixel-level representations, computes quality metrics for identifying anomalies.
 
 ## Workflow
 
@@ -30,14 +30,10 @@ conda activate om4ani
 pip install -r requirements.txt
 ```
 
-#### On Linux (e.g., Ubuntu/Debian):
+#### On Linux:
 ```bash
 git clone https://github.com/llqsee/O4AnI_submission.git
 cd O4AnI_submission
-
-# Install system dependencies for MPI and UMAP
-sudo apt-get update
-sudo apt-get install libopenmpi-dev build-essential
 
 # Create and activate a conda environment
 conda create -n om4ani python=3.9
@@ -47,56 +43,35 @@ conda activate om4ani
 pip install -r requirements.txt
 ```
 
-### 3. Verify Installation
+<!-- ### 3. Verify Installation
 Run the environment check script to ensure all packages are correctly installed:
 ```bash
 python utils/env_check.py
-```
+``` -->
 
 ## Quickstart
 
 You can immediately run the provided MNIST test script from the project root:
 
 ```bash
-python test_MNIST/MNIST_test_mnist_pred_str.py
+python main.py
 ```
 
-Or use the package in your own script:
+The experiments use parameter settings λ = 0 and β = 100, and compute the anomaly index with the Average Linkage Method.
 
-```python
-import os
-import sys
-from datasets.generateData import load_data
-from Our_metrics.Scatter_Metrics import Scatter_Metric
+## Implementation results
+After execution, two scatterplots are saved to `figures/`, and the VQM scores are printed in the console. They are shown below:
 
-# Load sample data (automatically resolves relative to project root)
-data = load_data('datasets/mnist/mnist_pred_updated_str.csv')
+![Category-based order scatterplot](figures/my_scatterplot_category_based_order.png)  
+This corresponds to Figure 1 (a) in our paper (https://doi.org/10.1109/TVCG.2025.3642219), showing some misclassified data instances are hidden, reflected by a lower VQM ≈ 0.21.
 
-# Configure the analyzer
-analysis = Scatter_Metric(
-    data=data,
-    xvariable='X coordinate',
-    yvariable='Y coordinate',
-    zvariable='pred',
-    marker_size=25,
-    dpi=100
-)
+![OM4AnI order scatterplot](figures/my_scatterplot_om4ani_order.png)  
 
-# Compute quality scores
-score = analysis.importance_metric(
-    important_cal_method='mahalanobis_distance', 
-    weight_diff_class=100, 
-    weight_same_class=0, 
-    order_variable='importance_index', 
-    asending=True
-)
+This corresponds to Figure 1 (b) in our paper (https://doi.org/10.1109/TVCG.2025.3642219), showing the misclassified data instances are visible, reflected by the higher VQM ≈ 0.49.
 
-print(f"OM4AnI score: {score:.4f}")
 
-# Save results (directories are created automatically)
-analysis.save_figure('output/my_scatterplot.png')
-analysis.save_heatmap('output/my_heatmap.png')
-```
+**Note:** Figures produced by this code may differ from the images in the paper. The plotting code was updated to add extra margins to avoid cutting any scatterplot markers, which can slightly change layout and visual appearance compared to the paper's figures.
+
 
 ## Project Structure
 
@@ -110,7 +85,6 @@ analysis.save_heatmap('output/my_heatmap.png')
 OM4AnI expects tabular data (CSV) with at least three columns:
 - Two numerical columns for coordinates (e.g., `X coordinate`, `Y coordinate`).
 - One categorical column for labels (e.g., `pred` or `label`).
-- (Optional) Probability columns for advanced importance weighting.
 
 ## Citation
 
